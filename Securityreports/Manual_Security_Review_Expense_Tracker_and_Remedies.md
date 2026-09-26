@@ -1,19 +1,13 @@
 # Manual Security Review – Expense Tracker
 
-## 1. Project Information
 
-**Project:** Daily Expense Tracker  
-**Programming Language:** Python  
-**Data Storage:** JSON file  
-**Security Analysis:** Bandit + Manual Code Review
-
-## 2. Review Objective
+## 1. Review Objective
 
 The purpose of this manual security review is to inspect the Expense Tracker source code for security weaknesses, unsafe programming practices, input-validation problems, error-handling issues, and data-integrity risks.
 
 Bandit was also used as an automated static security analyzer. Bandit did not report any security issues in the reviewed code. Therefore, the findings below are based on manual inspection and are mainly related to robustness, input validation, data integrity, and secure coding practices.
 
-## 3. Summary of Findings
+## 2. Summary of Findings
 
 | ID | Finding | Severity | Type | Status |
 |---|---|---|---|---|
@@ -24,7 +18,7 @@ Bandit was also used as an automated static security analyzer. Bandit did not re
 | F-05 | JSON file is stored without protection | Low | Data Protection | Improvement recommended |
 | F-06 | No backup/recovery mechanism | Low | Availability / Data Integrity | Improvement recommended |
 
-## 4. Detailed Findings
+## 3. Detailed Findings
 
 ### F-01 – Limited Text Input Validation
 
@@ -230,73 +224,7 @@ For example, a production application could maintain timestamped backups or use 
 Recommended improvement.
 
 ---
-
-## 5. Security Controls Already Present
-
-The manual review also identified several positive practices.
-
-### Positive Finding 1 – No Dynamic Code Execution
-
-The application does not use dangerous functions such as:
-
-```python
-eval()
-exec()
-```
-
-Therefore, user input is not directly executed as Python code.
-
-### Positive Finding 2 – No Shell Command Execution
-
-The application does not pass user input to shell commands using functions such as:
-
-```python
-os.system()
-```
-
-or unsafe `subprocess` shell execution.
-
-### Positive Finding 3 – JSON Instead of Pickle
-
-The application uses the JSON module for persistent data:
-
-```python
-json.load(file)
-json.dump(self.expences, file, indent=4)
-```
-
-It does not use `pickle.load()` to deserialize potentially untrusted objects.
-
-### Positive Finding 4 – Numeric Validation
-
-The program checks that an expense amount is positive:
-
-```python
-if amount <= 0:
-    print("Amount must be positive")
-```
-
-It also handles invalid numeric input with `ValueError`.
-
-### Positive Finding 5 – Date Validation
-
-The application validates dates using:
-
-```python
-datetime.strptime(date, "%d-%m-%Y")
-```
-
-This prevents invalid dates from being accepted through the date-search menu.
-
-## 6. Bandit Result
-
-Bandit was run against the project source code.
-
-**Result:** No Bandit security issues were reported.
-
-The automated result should not be interpreted as proof that the application is completely secure. Static analysis tools detect specific classes of problems, while manual review can identify application-specific weaknesses and improvements.
-
-## 7. Remediation Plan
+## 4. Remediation Plan
 
 The following improvements are recommended:
 
@@ -307,7 +235,7 @@ The following improvements are recommended:
 5. Consider appropriate protection for stored financial information.
 6. Implement a backup/recovery mechanism.
 
-## 8. Conclusion
+## 5. Conclusion
 
 The Expense Tracker was reviewed using both automated static analysis and manual inspection.
 
