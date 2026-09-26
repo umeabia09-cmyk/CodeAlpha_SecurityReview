@@ -1,0 +1,223 @@
+import os
+from typing import Optional 
+from datetime import datetime
+import json
+import time
+class ExpenceTracker:
+    def __init__(self,filename="expence.jyson"):
+        self.filename=filename
+        self.expences=self.load_expences()
+    def load_expences(self):
+        if os.path.exists(self.filename):
+            try:
+                with open(self.filename,"r") as file:
+                    return json.load(file)
+            except json.JSONDecodeError:
+                print("Error in reading. File creat a new file")
+                return {"expence":[]}
+        else:
+            return {"expence":[]}
+            
+    def add_expences(self,amount:float,catagory:str,discription:Optional[str]=None):
+        expence={
+            "ID":len(self.expences["expence"])+1,
+            "Date":datetime.now().strftime("%d-%m-%Y"),
+            "Time":datetime.now().strftime("%H-%M-%S"),
+            "Amount":round(float(amount),2),
+            "Catagory":catagory.strip().title(),
+            "Discription":discription.strip()
+        }
+        self.expences["expence"].append(expence)
+        self.save_expenses()
+        print("Processing",end="",flush=True)
+        for i in range(6):
+            time.sleep(0.5)
+            print("...",end="",flush=True)
+        print("\n\U00002705 Expence added successfully.\U0001F4B0")
+        
+    def save_expenses(self):
+        with open(self.filename,"w")as file:
+            json.dump(self.expences,file,indent=4)
+
+    def view_expenses(self,date:Optional[str]=None):
+        if not self.expences["expence"]:
+            print("No expenses yet\U0001F641")
+            return
+        re_expenses=self.expences["expence"]
+        if date:
+            re_expenses=[e for e in re_expenses if e["Date"]==date]
+            if not re_expenses:
+                print(f"No expenses for {date}\U0001F641")
+        print(f"__"*50)
+        print(f"{'ID':>3}{'Date':>8}{'Time':>10}{'Catagory':>16}{'Discription':>17}{'Amount':>20}")
+        print(f"__"*50)
+        total = 0
+        for e in re_expenses:
+            print(f"{e['ID']:>2}{e['Date']:>12}{e['Time']:>10}{e['Catagory']:>12}{e['Discription']:>17}{e['Amount']:>20}")
+            total+=e['Amount']
+        print(f"__"*50)
+        print(f"{'Total':>14}${total:>20}")
+              
+    def monthly_summary(self,year,month):
+        month_str = f"{month:02d}-{year}"
+        monthly_expenses = [
+            e for e in self.expences["expence"] 
+            if e["Date"].endswith(month_str)
+        ]
+        if not monthly_expenses:
+            print(f"No expenses found for {month_str}\U0001F641")
+            return
+        total = sum(e["Amount"] for e in monthly_expenses)
+        print(f"\nMonthly Summary for {month_str}")
+        print(f"Total Expenses: ${total:.2f}")
+        print(f"Number of Transactions: {len(monthly_expenses)}")
+        daily_totals = {}
+        for expense in monthly_expenses:
+            date = expense["Date"]
+            daily_totals[date] = daily_totals.get(date, 0) + expense["Amount"]  
+        print("\nDaily Breakdown:")
+        for date, amount in sorted(daily_totals.items()):
+            print(f"  {date}: ${amount:.2f}")
+    def catagory_summary(self):
+        if not self.expences["expence"]:
+            print("NO expenses yet\U0001F641".title())
+            return
+        catagory_summ={}
+        for exp in self.expences["expence"]:
+            catagory=exp["Catagory"]
+            catagory_summ[catagory]=catagory_summ.get(catagory,0)+exp["Amount"]
+        total=sum(catagory_summ.values())
+        print("\n" + "__"*50)
+        print(f"{'Category':<25} {'Amount':>15} {'Percentage':>13}")
+        print("__"*50)
+        for category, amount in sorted(catagory_summ.items(), key=lambda x: x[1], reverse=True):
+            percentage = (amount / total) * 100 if total > 0 else 0
+            print(f"{category:<25} {amount:>14.2f} {percentage:>10.1f}")
+        print("__"*50)
+        print(f"{'TOTAL':<25} {total:>14.2f}")
+        print("__"*50)
+      
+    def view_todayexpenses(self,date:Optional[str]=None):
+        if date is None:
+            date=datetime.now().strftime("%d-%m-%Y")
+        total=sum(exp["Amount"] for exp in self.expences["expence"] if exp["Date"]==date)
+        return total
+    
+    def delete_expenses(self,id:int):
+        become=False
+        for i, exp in enumerate(self.expences["expence"]):
+           # print(type(id),type(exp["ID"]))
+            if exp["ID"]==id:
+                delete_expense =self.expences["expence"].pop(i)
+                self.save_expenses()
+                print("Processing",end="",flush=True)
+                for i in range(6):
+                    time.sleep(0.5)
+                    print("...",end="",flush=True)
+                print(f"\n✓ Deleted expense: ${delete_expense['Amount']:.2f} - {delete_expense['Discription']}")
+                become=True
+                return
+        if not become:
+            print(f"✗ Expense with ID",id,"not found.")
+
+def main():
+    expence=ExpenceTracker()
+    while True:
+        print("\n" + "__"*50)
+        print("DAILY EXPENSE TRACKER")
+        print("__"*50)
+        print("1. Add Expenses")
+        print("2. View All Expenses")
+        print("3. Monthly Sammary ")
+        print("4. Catagory Summary")
+        print("5. View Expenses by Date")
+        print("6. View Today's Expenses")
+        print("7. Delete Expenses")
+        print("8. Exit")
+        try:
+            choice=int(input("\nEnter Choice(1-8): "))
+            if choice == 1:
+                try:
+                    i = 0
+                    while(i<3):
+                        amount=float(input("Enter Amount: "))
+                        if amount<=0:
+                            print("Amount must be positive")
+                        else:
+                            break
+                        i+=1
+                    if not amount:
+                        print("To Many Attempts")
+                        continue
+                    i = 0
+                    while(i<=3):
+                        catagory=input("Enter Catagory(Food,Entertainment etc): ").strip()
+                        if not catagory:
+                            print("Catagory cannot be empty")
+                        else:
+                            break
+                        i+=1
+                    if not amount:
+                        print("To Many Attempts")
+                        continue
+                    discription =input("Enter Discription: ").strip()
+                    expence.add_expences(amount,catagory,discription)
+                except ValueError:
+                    print("Invalid Amount Enter In Numbers")
+            if choice==2:
+                expence.view_expenses()
+            if choice==3:
+                try:
+                    year=int(input("Enter Year(YYYY Format): "))
+                    month=int(input("Enter Month(1-12): "))
+                    if 1<= month <=12:
+                        expence.monthly_summary(year,month)
+                    else:
+                        print("Month must be between 1 and 12")
+                except ValueError:
+                     print("Invalid Amount Enter In Numbers")
+            if choice==4:
+                expence.catagory_summary()
+            if choice==5:
+               # date=input("Enter date (YYYY-MM-DD): ").strip()
+                become=False
+                i = 0
+                while(i<3):
+                    date=input("Enter date (DD-MM-YYYY): ").strip()
+                    try:
+                        datetime.strptime(date,"%d-%m-%Y")
+                        expence.view_expenses(date)
+                        become=True
+                        break
+                    except ValueError:
+                        print("Invalid date formate. Use(DD-MM-YYYY)")
+                    i+=1
+                if not become:
+                    print("To many attempts".title())
+                    continue
+            if choice==6:
+                date=datetime.now().strftime("%d-%m-%Y")
+                expence.view_expenses(date)
+            if choice==7:
+                become=False
+                i = 0
+                while(i<3):
+                    try:
+                        expense_id=int(input("Enter ID of Expence You Want To Delete: "))
+                        expence.delete_expenses(expense_id)
+                        become=True
+                        break
+                    except ValueError:
+                        print("Invalid ID .Please enter number")
+                    i+=1
+                if not become:
+                    print("to many attempts".title())
+                    continue
+            if choice==8:
+                print("thanks for using me\U0001F60A".title())
+                print("Goodbye\U0001F44B")
+                break
+        except ValueError:
+            print("Invalid Choice.Enter a Number")            
+if __name__=="__main__":
+    main()
